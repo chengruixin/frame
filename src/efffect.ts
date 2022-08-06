@@ -13,8 +13,9 @@ let activeEffect: TFnArg;
 const dependencyBucket = new WeakMap<TAnyObject, Map<TAnyKey, Set<TFnArg>>>();
 
 
-function cleanDeps(activeEffect: TFnArg) {
-    activeEffect.deps.forEach((depSet: Set<TFnArg>) => depSet.delete(activeEffect));
+function cleanDeps(effectFn: TFnArg) {
+    effectFn.deps.forEach((depSet: Set<TFnArg>) => depSet.delete(effectFn));
+    effectFn.deps.length = 0;
 }
 
 export function track(target: TAnyObject, key: TAnyKey) {
@@ -51,7 +52,6 @@ export function trigger(target: TAnyObject, key: TAnyKey) {
     }
 
     const effectFns = tragetDep.get(key);
-
     const effectsToRun = new Set(effectFns);
     effectsToRun.forEach(fn => fn());
 }
