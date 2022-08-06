@@ -1,14 +1,24 @@
 
-type TFnArg = (<T>() => T) | (() => void); 
+type TFnArg = {
+    <T>(): T;
+    (): void;
+    deps?:  Set<TFnArg>[];
+}; 
+
 type TEffectFn = (fn: () => void) => void;
 type TAnyObject = Record<string | symbol, any>;
 type TAnyKey = TAnyObject | string | symbol;
 
-let acctiveEffect: TFnArg;
+let activeEffect: TFnArg;
 const dependencyBucket = new WeakMap<TAnyObject, Map<TAnyKey, Set<TFnArg>>>();
 
+
+function cleanDeps(activeEffect: TFnArg) {
+    activeEffect.deps.forEach((depSet: Set<TFnArg>) => depSet.delete(activeEffect));
+}
+
 export function track(target: TAnyObject, key: TAnyKey) {
-    if (!acctiveEffect) {
+    if (!activeEffect) {
         return;
     }
 
@@ -23,7 +33,10 @@ export function track(target: TAnyObject, key: TAnyKey) {
 
     const deps = targetDep.get(key);
 
-    deps.add(acctiveEffect);
+    // collect reversed deps set
+    activeEffect.deps.push(deps);
+
+    deps.add(activeEffect);
 }
 
 export function trigger(target: TAnyObject, key: TAnyKey) {
@@ -39,17 +52,20 @@ export function trigger(target: TAnyObject, key: TAnyKey) {
 
     const effectFns = tragetDep.get(key);
 
-
-    effectFns.forEach(fn => fn());
+    const effectsToRun = new Set(effectFns);
+    effectsToRun.forEach(fn => fn());
 }
 
 
 export const effect: TEffectFn = (fn: TFnArg) => {
-    const effectFn = () => {
-        acctiveEffect = effectFn;
+    const effectFn: TFnArg = () => {
+        activeEffect = effectFn;
+        cleanDeps(effectFn);
         fn()
-        acctiveEffect = null;
+        activeEffect = null;
     }
+
+    effectFn.deps = [];
 
     effectFn();
 }

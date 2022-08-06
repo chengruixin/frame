@@ -13,11 +13,3 @@ effect(() => {
     document.body.innerText = obj.status ? obj.text : 'not'
 });
 
-// obj.text = 'nont';
-
-obj.status = false;
-obj.text = '123123'
-// console.log()
-// obj.text = '123';
-// proxy.a++;
-// proxy.a++;
